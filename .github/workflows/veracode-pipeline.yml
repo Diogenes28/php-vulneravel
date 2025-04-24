@@ -102,10 +102,6 @@ jobs:
           # Nome do arquivo de saída no formato SARIF, que será enviado para o GitHub
           output-results-sarif: veracode-results.sarif  
           
-          # O token do GitHub é necessário para autenticar e enviar os resultados para a aba "Code Scanning"
-          github-token: ${{ secrets.GITHUB_TOKEN }}  
-
-
       # Passo 4: Enviar os resultados no formato SARIF para a aba "Code Scanning" do GitHub
       - name: Enviar resultados SARIF para GitHub
         uses: github/codeql-action/upload-sarif@v3
