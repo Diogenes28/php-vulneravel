@@ -8,7 +8,7 @@ on:
   push:
     branches: [ master ]  # Roda quando houver push na branch "master"
   pull_request:
-    branches: [ master ]  # Roda quando alguém abrir um PR para a branch "master"
+    types: [opened, synchronize] # evita execuções desnecessárias no PR
 
 jobs:
   build:
