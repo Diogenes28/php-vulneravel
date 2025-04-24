@@ -76,7 +76,7 @@ jobs:
 
       # Converte o JSON para SARIF usando a ação oficial do Marketplace
       - name: Converter JSON para SARIF
-        uses: veracode/veracode-pipeline-scan-results-to-sarif@master
+        uses: veracode/veracode-pipeline-scan-results-to-sarif@v1.1.0
         with:
           pipeline-results-json: results.json
           output-results-sarif: veracode-results.sarif
