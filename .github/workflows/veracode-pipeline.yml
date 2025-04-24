@@ -6,23 +6,23 @@ on:
   pull_request:
     branches: [ "main" ]
   schedule:
-    - cron: '20 5 * * 3'
+    - cron: '20 5 * * 3'  # Toda quarta-feira às 05:20 (UTC)
 
 jobs:
   veracode-pipeline-scan:
     runs-on: ubuntu-latest
 
     steps:
-      # Baixa o código do seu repositório
+      # Etapa 1: Faz o checkout do repositório
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      # Compacta os arquivos em um .zip (exclui .git e workflows)
+      # Etapa 2: Compacta os arquivos em um ZIP, ignorando a pasta .git e workflows
       - name: Compactar arquivos
         run: |
           zip -r app.zip . -x "*.git*" ".github/*"
 
-      # Executa o scan com a ação oficial mais recente da Veracode
+      # Etapa 3: Executa o Veracode Pipeline Scan (versão mais recente recomendada)
       - name: Executar Veracode Pipeline Scan
         uses: veracode/Veracode-pipeline-scan-action@v1.0.18
         with:
@@ -31,14 +31,14 @@ jobs:
           file: app.zip
           fail_build: false
 
-      # Converte o arquivo results.json em results.sarif com Python
+      # Etapa 4: Baixa o conversor de JSON para SARIF e executa
       - name: Converter JSON para SARIF (Python)
         run: |
-          curl -O https://raw.githubusercontent.com/veracode/veracode-pipeline-scan-results-to-sarif/main/convert_json_to_sarif.py
+          curl -O https://raw.githubusercontent.com/veracode/veracode-pipeline-scan-results-to-sarif/main/src/convert_json_to_sarif.py
           python3 convert_json_to_sarif.py -i results.json -o results.sarif
 
-      # Envia o results.sarif para a aba "Code scanning alerts"
+      # Etapa 5: Envia o arquivo SARIF para a aba "Code scanning alerts"
       - name: Upload do relatório no GitHub (SARIF)
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
