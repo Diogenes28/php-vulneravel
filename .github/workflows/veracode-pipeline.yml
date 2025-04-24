@@ -28,14 +28,13 @@ jobs:
           file: app.zip
           fail_build: false
 
-      # Passo de debug para obter mais informações sobre o erro
-      - name: Obter detalhes de erro do Veracode (Debug)
-        run: |
-          echo "Verificando status do Veracode..."
-          curl -u ${{ secrets.VERACODE_API_ID }}:${{ secrets.VERACODE_API_KEY }} "https://api.veracode.com/was/api/2.0/getbuilds.do"
-
+      # Adicionando um passo para verificar o status e logs do Veracode
       - name: Verificar se o arquivo SARIF foi gerado
         run: |
+          echo "Verificando se o arquivo SARIF foi gerado..."
+          ls -lh
+
+          # Tentando exibir o conteúdo do diretório e procurar o arquivo SARIF
           if [ ! -f results.sarif ]; then
             echo "Erro: O arquivo results.sarif não foi gerado"
             exit 1
