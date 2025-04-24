@@ -30,7 +30,7 @@ jobs:
 
       - name: Converter JSON para SARIF (Python)
         run: |
-          curl -O https://raw.githubusercontent.com/veracode/veracode-pipeline-scan-results-to-sarif/main/convert_json_to_sarif.py
+          curl -O https://raw.githubusercontent.com/veracode/veracode-pipeline-scan-results-to-sarif/main/scripts/convert_json_to_sarif.py
           python3 convert_json_to_sarif.py -i results.json -o results.sarif
 
       - name: Upload do relatório no GitHub (SARIF)
