@@ -22,7 +22,7 @@ jobs:
         run: |
           zip -r app.zip . -x "*.git*" ".github/*"
 
-      # Etapa 3: Executa o Veracode Pipeline Scan (versão mais recente recomendada)
+      # Etapa 3: Executa o Veracode Pipeline Scan
       - name: Executar Veracode Pipeline Scan
         uses: veracode/Veracode-pipeline-scan-action@v1.0.18
         with:
@@ -31,13 +31,29 @@ jobs:
           file: app.zip
           fail_build: false
 
-      # Etapa 4: Baixa o conversor de JSON para SARIF e executa
+      # Etapa 4: Verifica se o results.json foi gerado
+      - name: Verificar se o results.json foi gerado
+        run: |
+          if [ ! -f results.json ]; then
+            echo "Erro: o arquivo results.json não foi gerado pelo Veracode Pipeline Scan"
+            exit 1
+          fi
+
+      # Etapa 5: Baixa o conversor de JSON para SARIF e executa
       - name: Converter JSON para SARIF (Python)
         run: |
           curl -O https://raw.githubusercontent.com/veracode/veracode-pipeline-scan-results-to-sarif/main/src/convert_json_to_sarif.py
           python3 convert_json_to_sarif.py -i results.json -o results.sarif
 
-      # Etapa 5: Envia o arquivo SARIF para a aba "Code scanning alerts"
+      # Etapa 6: Verifica se o results.sarif foi gerado corretamente
+      - name: Verificar se o results.sarif foi gerado
+        run: |
+          if [ ! -f results.sarif ]; then
+            echo "Erro: o arquivo results.sarif não foi gerado."
+            exit 1
+          fi
+
+      # Etapa 7: Envia o arquivo SARIF para a aba "Code scanning alerts"
       - name: Upload do relatório no GitHub (SARIF)
         uses: github/codeql-action/upload-sarif@v3
         with:
