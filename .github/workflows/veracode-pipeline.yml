@@ -1,25 +1,30 @@
+# Nome do workflow que aparece na aba "Actions" do GitHub
 name: Veracode Pipeline Scan
 
+# Quando este workflow será executado
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" ]  # Ao fazer push na branch main
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main" ]  # Ao abrir PRs para a main
   schedule:
-    - cron: '20 5 * * 3'
+    - cron: '20 5 * * 3'  # Toda quarta-feira às 05:20 UTC
 
 jobs:
   veracode-pipeline-scan:
     runs-on: ubuntu-latest
 
     steps:
+      # Etapa 1: Clona o repositório
       - name: Checkout do código
         uses: actions/checkout@v4
 
+      # Etapa 2: Compacta todos os arquivos do repositório em um arquivo ZIP (exceto .git e workflows)
       - name: Compactar arquivos
         run: |
           zip -r app.zip . -x "*.git*" ".github/*"
 
+      # Etapa 3: Executa o Veracode Pipeline Scan com a ação oficial
       - name: Executar Veracode Pipeline Scan
         uses: veracode/Veracode-pipeline-scan-action@v1.0.18
         with:
@@ -28,12 +33,10 @@ jobs:
           file: app.zip
           fail_build: false
 
-      - name: Baixar conversor JSON para SARIF
+      # Etapa 4: Baixa o conversor de JSON para SARIF e executa se o arquivo results.json existir
+      - name: Converter JSON para SARIF (se results.json existir)
         run: |
-          curl -sSLO https://raw.githubusercontent.com/veracode/veracode-pipeline-scan-results-to-sarif/main/src/convert_json_to_sarif.py
-
-      - name: Converter JSON para SARIF (se existir)
-        run: |
+          curl -sSLO https://raw.githubusercontent.com/veracode/veracode-pipeline-scan-results-to-sarif/main/scripts/convert_json_to_sarif.py
           if [ -f results.json ]; then
             python3 convert_json_to_sarif.py -i results.json -o results.sarif
           else
@@ -41,7 +44,8 @@ jobs:
             exit 1
           fi
 
-      - name: Upload do relatório no GitHub (SARIF)
+      # Etapa 5: Envia o arquivo SARIF para a aba de "Code scanning alerts"
+      - name: Upload do relatório SARIF para o GitHub
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
