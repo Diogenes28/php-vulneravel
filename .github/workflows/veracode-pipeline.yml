@@ -43,6 +43,6 @@ jobs:
 
       # Etapa 4 (opcional): Envia os resultados do scan para a aba "Code scanning alerts" no GitHub
       - name: Upload do relatório no GitHub (SARIF)
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif                # O Veracode gera esse arquivo de relatório em formato SARIF
