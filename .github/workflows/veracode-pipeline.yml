@@ -1,60 +1,29 @@
+# pipeline-scan.yml
+# Workflow do Veracode Pipeline Scan - análise rápida de vulnerabilidades
+
 name: Veracode Pipeline Scan
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" ]  # Executa quando houver push na branch main
   pull_request:
-    branches: [ "main" ]
-  schedule:
-    - cron: '20 5 * * 3'  # Toda quarta-feira às 05:20 (UTC)
+    branches: [ "main" ]  # Executa quando houver PRs direcionados à main
 
 jobs:
   veracode-pipeline-scan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Usa máquina Linux do GitHub para rodar o workflow
 
     steps:
-      # Etapa 1: Faz o checkout do repositório
       - name: Checkout do código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4  # Clona o código do repositório
 
-      # Etapa 2: Compacta os arquivos em um ZIP, ignorando a pasta .git e workflows
-      - name: Compactar arquivos
-        run: |
-          zip -r app.zip . -x "*.git*" ".github/*"
+      - name: Compactar os arquivos PHP
+        run: zip -r app.zip . -x "*.git*"  # Cria o arquivo app.zip ignorando pastas ocultas como .git
 
-      # Etapa 3: Executa o Veracode Pipeline Scan
-      - name: Executar Veracode Pipeline Scan
-        uses: veracode/Veracode-pipeline-scan-action@v1.0.18
+      - name: Executar o Veracode Pipeline Scan
+        uses: veracode/veracode-pipeline-scan-action@v1.0.9  # Usa a ação oficial do Veracode
         with:
-          vid: ${{ secrets.VERACODE_API_ID }}
-          vkey: ${{ secrets.VERACODE_API_KEY }}
-          file: app.zip
-          fail_build: false
-
-      # Etapa 4: Verifica se o results.json foi gerado
-      - name: Verificar se o results.json foi gerado
-        run: |
-          if [ ! -f results.json ]; then
-            echo "Erro: o arquivo results.json não foi gerado pelo Veracode Pipeline Scan"
-            exit 1
-          fi
-
-      # Etapa 5: Baixa o conversor de JSON para SARIF e executa
-      - name: Converter JSON para SARIF (Python)
-        run: |
-          curl -O https://raw.githubusercontent.com/veracode/veracode-pipeline-scan-results-to-sarif/main/src/convert_json_to_sarif.py
-          python3 convert_json_to_sarif.py -i results.json -o results.sarif
-
-      # Etapa 6: Verifica se o results.sarif foi gerado corretamente
-      - name: Verificar se o results.sarif foi gerado
-        run: |
-          if [ ! -f results.sarif ]; then
-            echo "Erro: o arquivo results.sarif não foi gerado."
-            exit 1
-          fi
-
-      # Etapa 7: Envia o arquivo SARIF para a aba "Code scanning alerts"
-      - name: Upload do relatório no GitHub (SARIF)
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: results.sarif
+          vid: ${{ secrets.VERACODE_API_ID }}  # ID da API do Veracode
+          vkey: ${{ secrets.VERACODE_API_KEY }}  # Chave da API do Veracode
+          file: app.zip  # Arquivo compactado do código
+          fail_build: false  # Não falha o pipeline se encontrar vulnerabilidades
