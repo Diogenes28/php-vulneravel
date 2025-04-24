@@ -41,6 +41,14 @@ jobs:
           file: app.zip                            # Arquivo que será escaneado
           fail_build: false                        # true = falha o job se vulnerabilidades forem encontradas
 
+            # Verifique se o arquivo SARIF foi gerado
+      - name: Verificar se o arquivo SARIF foi gerado
+        run: |
+          if [ ! -f results.sarif ]; then
+            echo "Erro: O arquivo results.sarif não foi gerado"
+            exit 1
+          fi
+
       # Etapa 4 (opcional): Envia os resultados do scan para a aba "Code scanning alerts" no GitHub
       - name: Upload do relatório no GitHub (SARIF)
         uses: github/codeql-action/upload-sarif@v3
