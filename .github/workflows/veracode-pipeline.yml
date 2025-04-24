@@ -1,47 +1,39 @@
-# Nome do workflow, aparece na aba "Actions" do GitHub
 name: Veracode Pipeline Scan
 
-# Define quando o workflow será executado:
-# - push na branch main
-# - pull request direcionado à main
-# - toda quarta-feira às 05:20 da manhã (UTC)
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
   schedule:
-    - cron: '20 5 * * 3'  # (Opcional) Executa automaticamente às quartas-feiras
+    - cron: '20 5 * * 3'
 
 jobs:
   veracode-pipeline-scan:
-    # Define o sistema operacional da máquina virtual que será usada
     runs-on: ubuntu-latest
 
     steps:
-      # Etapa 1: Clona o repositório para o ambiente de execução
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      # Etapa 2: Compacta o código-fonte em um arquivo .zip para ser escaneado
       - name: Compactar arquivos
         run: |
           zip -r app.zip . -x "*.git*" ".github/*"
-        # zip -r → cria o .zip recursivamente
-        # app.zip → nome do arquivo gerado
-        # . → inclui todos os arquivos e pastas atuais
-        # -x "*.git*" ".github/*" → exclui arquivos desnecessários do pacote (como .git e os próprios workflows)
 
-      # Etapa 3: Roda o scan do Veracode usando a versão mais recente da ação oficial (v1.0.18)
       - name: Executar Veracode Pipeline Scan
         uses: veracode/Veracode-pipeline-scan-action@v1.0.18
         with:
-          vid: ${{ secrets.VERACODE_API_ID }}     # ID da API (armazenado com segurança no GitHub Secrets)
-          vkey: ${{ secrets.VERACODE_API_KEY }}    # Chave da API (também em GitHub Secrets)
-          file: app.zip                            # Arquivo que será escaneado
-          fail_build: false                        # true = falha o job se vulnerabilidades forem encontradas
+          vid: ${{ secrets.VERACODE_API_ID }}
+          vkey: ${{ secrets.VERACODE_API_KEY }}
+          file: app.zip
+          fail_build: false
 
-            # Verifique se o arquivo SARIF foi gerado
+      # Passo de debug para obter mais informações sobre o erro
+      - name: Obter detalhes de erro do Veracode (Debug)
+        run: |
+          echo "Verificando status do Veracode..."
+          curl -u ${{ secrets.VERACODE_API_ID }}:${{ secrets.VERACODE_API_KEY }} "https://api.veracode.com/was/api/2.0/getbuilds.do"
+
       - name: Verificar se o arquivo SARIF foi gerado
         run: |
           if [ ! -f results.sarif ]; then
@@ -49,8 +41,7 @@ jobs:
             exit 1
           fi
 
-      # Etapa 4 (opcional): Envia os resultados do scan para a aba "Code scanning alerts" no GitHub
       - name: Upload do relatório no GitHub (SARIF)
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v2
         with:
-          sarif_file: results.sarif                # O Veracode gera esse arquivo de relatório em formato SARIF
+          sarif_file: results.sarif
