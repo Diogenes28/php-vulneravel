@@ -28,19 +28,13 @@ jobs:
           file: app.zip
           fail_build: false
 
-      # Adicionando um passo para verificar o status e logs do Veracode
-      - name: Verificar se o arquivo SARIF foi gerado
+      - name: Converter JSON para SARIF
         run: |
-          echo "Verificando se o arquivo SARIF foi gerado..."
-          ls -lh
-
-          # Tentando exibir o conteúdo do diretório e procurar o arquivo SARIF
-          if [ ! -f results.sarif ]; then
-            echo "Erro: O arquivo results.sarif não foi gerado"
-            exit 1
-          fi
+          curl -O https://downloads.veracode.com/securityscan/pipeline-scan-LATEST.zip
+          unzip -o pipeline-scan-LATEST.zip -d scanner
+          java -jar scanner/pipeline-scan.jar -f results.json --format sarif -o results.sarif
 
       - name: Upload do relatório no GitHub (SARIF)
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: results.sarif
