@@ -1,14 +1,14 @@
-# Nome do workflow que aparece na aba "Actions" do GitHub
+# Nome que aparecerá na aba "Actions" do GitHub
 name: Veracode Pipeline Scan
 
-# Quando este workflow será executado
+# Quando esse workflow será executado
 on:
   push:
-    branches: [ "main" ]  # Ao fazer push na branch main
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]  # Ao abrir PRs para a main
+    branches: [ "main" ]
   schedule:
-    - cron: '20 5 * * 3'  # Toda quarta-feira às 05:20 UTC
+    - cron: '20 5 * * 3'  # Toda quarta-feira às 05:20 (horário UTC)
 
 jobs:
   veracode-pipeline-scan:
@@ -19,24 +19,29 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      # Etapa 2: Compacta todos os arquivos do repositório em um arquivo ZIP (exceto .git e workflows)
-      - name: Compactar arquivos
+      # Etapa 2: Compacta os arquivos para envio ao Veracode (excluindo .git e workflows)
+      - name: Compactar código-fonte em ZIP
         run: |
           zip -r app.zip . -x "*.git*" ".github/*"
 
-      # Etapa 3: Executa o Veracode Pipeline Scan com a ação oficial
+      # Etapa 3: Executa o Veracode Pipeline Scan com geração do arquivo de resultado
       - name: Executar Veracode Pipeline Scan
         uses: veracode/Veracode-pipeline-scan-action@v1.0.18
         with:
-          vid: ${{ secrets.VERACODE_API_ID }}
-          vkey: ${{ secrets.VERACODE_API_KEY }}
-          file: app.zip
-          fail_build: false
+          vid: ${{ secrets.VERACODE_API_ID }}     # ID da API (salvo nos Secrets do GitHub)
+          vkey: ${{ secrets.VERACODE_API_KEY }}    # Chave da API
+          file: app.zip                            # Arquivo compactado que será analisado
+          fail_build: false                        # true = falha o job se encontrar vulnerabilidades
+          output: results.json                     # Gera o relatório em formato JSON
 
-      # Etapa 4: Baixa o conversor JSON para SARIF e executa se o arquivo results.json existir
-      - name: Baixar e converter JSON para SARIF (se results.json existir)
+      # Etapa 4: Baixa o script oficial da Veracode que converte JSON para SARIF
+      - name: Baixar conversor JSON → SARIF
         run: |
           curl -sSLO https://raw.githubusercontent.com/veracode/veracode-pipeline-scan-results-to-sarif/main/scripts/convert_json_to_sarif.py
+
+      # Etapa 5: Converte o arquivo JSON em SARIF (se o arquivo existir)
+      - name: Converter JSON para SARIF (se existir)
+        run: |
           if [ -f results.json ]; then
             python3 convert_json_to_sarif.py -i results.json -o results.sarif
           else
@@ -44,8 +49,8 @@ jobs:
             exit 1
           fi
 
-      # Etapa 5: Envia o arquivo SARIF para a aba de "Code scanning alerts"
-      - name: Upload do relatório SARIF para o GitHub
+      # Etapa 6: Envia o SARIF para o GitHub para exibir na aba "Code scanning alerts"
+      - name: Upload do SARIF no GitHub
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
