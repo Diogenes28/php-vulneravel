@@ -1,5 +1,5 @@
 # Esse workflow faz análise de segurança estática no seu código PHP usando o Veracode Pipeline Scan
-# Os resultados aparecem diretamente na aba "Code Scanning Alerts" do GitHub
+# Os resultados aparecem diretamente na aba "Code Scanning Alerts" do GitHub, facilitando a identificação de vulnerabilidades no código.
 
 name: Veracode Static Analysis Pipeline Scan
 
@@ -12,39 +12,48 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # Define que o job "build" será executado em uma máquina virtual com o sistema operacional Ubuntu
 
     steps:
-      # Baixa os arquivos do repositório para o ambiente de execução
+      # Passo 1: Baixar os arquivos do seu repositório para a máquina virtual onde o workflow será executado
       - uses: actions/checkout@v3
 
-      # Empacota os arquivos PHP e outros arquivos relevantes em um .zip
+      # Passo 2: Empacotar o código e outros arquivos relevantes em um arquivo .zip, que será analisado pelo Veracode
       - name: Criar pacote .zip do código
-        run: zip -R project.zip '*.php' '*.html' '*.js' '*.css' '*.json'
+        run: zip -R project.zip '*.php' '*.html' '*.js' '*.css' '*.json' # Aqui estamos criando um arquivo .zip contendo todos os arquivos PHP, HTML, JS, CSS e JSON do seu repositório
 
-      # Salva o .zip como artefato para ser usado no próximo job
+       # Passo 3: Salvar o arquivo .zip como artefato, para que ele possa ser utilizado no próximo job
       - name: Salvar pacote como artefato
         uses: actions/upload-artifact@v4
         with:
-          name: CodePackage
-          path: project.zip
+          name: CodePackage # Nome do artefato que será salvo, para ser utilizado mais tarde
+          path: project.zip # Caminho do arquivo que será armazenado
 
   pipeline-scan:
-    needs: build
-    runs-on: ubuntu-latest
+    needs: build # Este job só será executado depois que o job "build" for concluído com sucesso
+    runs-on: ubuntu-latest # O job "pipeline-scan" também será executado em uma máquina virtual com Ubuntu
 
     container:
-      image: veracode/pipeline-scan:latest
-      options: --user root
+      image: veracode/pipeline-scan:latest # Estamos utilizando a imagem oficial do Docker para o Veracode Pipeline Scan
+      options: --user root # Permitimos a execução do processo como usuário root no container, para evitar problemas de permissões
 
     steps:
-      # Recupera o arquivo .zip gerado no job anterior
+      # Passo 1: Baixar o artefato gerado no job anterior, o arquivo .zip com o código
       - name: Baixar o artefato do código
         uses: actions/download-artifact@v4
         with:
-          name: CodePackage
+          name: CodePackage # Nome do artefato que foi gerado no job "build"
 
-      # Executa o Veracode Pipeline Scan com as credenciais armazenadas nos secrets
+      # Passo 2: Executar o Veracode Pipeline Scan para analisar o código em busca de vulnerabilidades
+      # Passo 2: Executar o Veracode Pipeline Scan para analisar o código em busca de vulnerabilidades
+      # Executa o Veracode Pipeline Scan, que realiza a análise de segurança no código PHP
+      # Executa o Veracode Pipeline Scan a partir do arquivo JAR
+      # Usa o API ID da Veracode armazenado em "secrets"
+      # Usa a API Key da Veracode armazenada em "secrets"
+      # Faz o scan falhar se encontrar vulnerabilidades de alta severidade
+      # Arquivo zip contendo o código que será analisado
+      # ID da aplicação na Veracode, armazenado em "secrets"
+      # Salva os resultados da análise no formato JSON
       - name: Executar Veracode Pipeline Scan
         run: |
           java -jar /opt/veracode/pipeline-scan.jar \
@@ -56,35 +65,49 @@ jobs:
             --json_output_file="results.json"
         continue-on-error: true  # Mesmo com vulnerabilidades, o fluxo continua para gerar relatórios
 
-      # Salva os resultados da análise como artefato para o próximo job
+      # Passo 3: Salvar o arquivo de resultados da análise (results.json) como artefato, para que ele possa ser usado no próximo job
       - name: Salvar resultados do scan
         uses: actions/upload-artifact@v4
         with:
-          name: ScanResults
-          path: results.json
+          name: ScanResults # Nome do artefato que será salvo, para ser utilizado mais tarde
+          path: results.json  # Caminho do arquivo de resultados que será armazenado
 
   process-results:
-    needs: pipeline-scan
-    runs-on: ubuntu-latest
+    needs: pipeline-scan # Este job só será executado depois que o job "pipeline-scan" for concluído com sucesso
+    runs-on: ubuntu-latest # O job "process-results" será executado em uma máquina virtual com Ubuntu
 
     steps:
-      # Necessário para que o upload-sarif funcione corretamente
+      # Passo 1: Realiza o checkout do repositório para garantir que a versão mais recente do código esteja disponível
       - name: Checkout do repositório
         uses: actions/checkout@v3
-
+        
+      # Passo 2: Baixar os resultados da análise do Veracode (o arquivo results.json)
       - name: Baixar resultados do Veracode
         uses: actions/download-artifact@v4
         with:
-          name: ScanResults
+          name: ScanResults # Nome do artefato que foi gerado no job anterior
 
+      # Passo 3: Converter o arquivo JSON de resultados da análise para o formato SARIF, que é compatível com o GitHub Code Scanning
+      # O Veracode gera os resultados da análise no formato JSON, mas o GitHub espera os resultados em formato SARIF para exibi-los na aba "Code Scanning".
+      # Nesta etapa, estamos utilizando uma ação oficial para converter o arquivo de resultados do formato JSON para SARIF.
+      # O arquivo JSON gerado pelo Veracode é chamado "results.json" e o arquivo de saída, no formato SARIF, será chamado "veracode-results.sarif".
+      # O GitHub Token é usado para autenticar o processo e garantir que os resultados possam ser enviados para o repositório no GitHub.
+      
       - name: Converter JSON para SARIF
         uses: veracode/veracode-pipeline-scan-results-to-sarif@master
         with:
-          pipeline-results-json: results.json
-          output-results-sarif: veracode-results.sarif
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Arquivo de resultados gerado pelo Veracode em formato JSON
+          pipeline-results-json: results.json  
+          
+          # Nome do arquivo de saída no formato SARIF, que será enviado para o GitHub
+          output-results-sarif: veracode-results.sarif  
+          
+          # O token do GitHub é necessário para autenticar e enviar os resultados para a aba "Code Scanning"
+          github-token: ${{ secrets.GITHUB_TOKEN }}  
 
+
+      # Passo 4: Enviar os resultados no formato SARIF para a aba "Code Scanning" do GitHub
       - name: Enviar resultados SARIF para GitHub
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: veracode-results.sarif
+          sarif_file: veracode-results.sarif # Arquivo SARIF que contém os resultados da análise
