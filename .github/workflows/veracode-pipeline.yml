@@ -64,28 +64,27 @@ jobs:
           path: results.json
 
   process-results:
-      needs: pipeline-scan
-      runs-on: ubuntu-latest
-  
-      steps:
-        # ✅ Necessário para que o upload-sarif funcione corretamente
-        - name: Checkout do repositório
-          uses: actions/checkout@v3
-  
-        - name: Baixar resultados do Veracode
-          uses: actions/download-artifact@v4
-          with:
-            name: ScanResults
-  
-        - name: Converter JSON para SARIF
-          uses: veracode/veracode-pipeline-scan-results-to-sarif@master
-          with:
-            pipeline-results-json: results.json
-            output-results-sarif: veracode-results.sarif
-            finding-rule-level: "4:3:0"
-  
-        - name: Enviar resultados SARIF para GitHub
-          uses: github/codeql-action/upload-sarif@v3
-          with:
-            sarif_file: veracode-results.sarif
+    needs: pipeline-scan
+    runs-on: ubuntu-latest
 
+    steps:
+      # Necessário para que o upload-sarif funcione corretamente
+      - name: Checkout do repositório
+        uses: actions/checkout@v3
+
+      - name: Baixar resultados do Veracode
+        uses: actions/download-artifact@v4
+        with:
+          name: ScanResults
+
+      - name: Converter JSON para SARIF
+        uses: veracode/veracode-pipeline-scan-results-to-sarif@master
+        with:
+          pipeline-results-json: results.json
+          output-results-sarif: veracode-results.sarif
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enviar resultados SARIF para GitHub
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: veracode-results.sarif
