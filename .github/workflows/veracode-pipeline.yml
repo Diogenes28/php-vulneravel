@@ -33,8 +33,8 @@ jobs:
           file: app.zip
           fail_build: false
 
-      # Etapa 4: Baixa o conversor de JSON para SARIF e executa se o arquivo results.json existir
-      - name: Converter JSON para SARIF (se results.json existir)
+      # Etapa 4: Baixa o conversor JSON para SARIF e executa se o arquivo results.json existir
+      - name: Baixar e converter JSON para SARIF (se results.json existir)
         run: |
           curl -sSLO https://raw.githubusercontent.com/veracode/veracode-pipeline-scan-results-to-sarif/main/scripts/convert_json_to_sarif.py
           if [ -f results.json ]; then
