@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ "main" ]
   schedule:
-    - cron: '20 5 * * 3'
+    - cron: '20 5 * * 3'  # Executa às quartas-feiras às 05:20 UTC
 
 jobs:
   veracode-pipeline-scan:
@@ -28,10 +28,15 @@ jobs:
           file: app.zip
           fail_build: false
 
-      - name: Converter JSON para SARIF (Python)
+      - name: Baixar e converter JSON para SARIF
         run: |
-          curl -O https://raw.githubusercontent.com/veracode/veracode-pipeline-scan-results-to-sarif/main/scripts/convert_json_to_sarif.py
-          python3 convert_json_to_sarif.py -i results.json -o results.sarif
+          curl -O https://raw.githubusercontent.com/veracode/veracode-pipeline-scan-results-to-sarif/main/src/convert_json_to_sarif.py
+          if [ -f results.json ]; then
+            python3 convert_json_to_sarif.py -i results.json -o results.sarif
+          else
+            echo "Arquivo results.json não encontrado. Verifique se o scan foi executado corretamente."
+            exit 1
+          fi
 
       - name: Upload do relatório no GitHub (SARIF)
         uses: github/codeql-action/upload-sarif@v3
