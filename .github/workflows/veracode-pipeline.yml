@@ -13,13 +13,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Baixa o código do seu repositório
       - name: Checkout do código
         uses: actions/checkout@v4
 
+      # Compacta os arquivos em um .zip (exclui .git e workflows)
       - name: Compactar arquivos
         run: |
           zip -r app.zip . -x "*.git*" ".github/*"
 
+      # Executa o scan com a ação oficial mais recente da Veracode
       - name: Executar Veracode Pipeline Scan
         uses: veracode/Veracode-pipeline-scan-action@v1.0.18
         with:
@@ -28,12 +31,13 @@ jobs:
           file: app.zip
           fail_build: false
 
-      - name: Converter JSON para SARIF
+      # Converte o arquivo results.json em results.sarif com Python
+      - name: Converter JSON para SARIF (Python)
         run: |
-          curl -O https://downloads.veracode.com/securityscan/pipeline-scan-LATEST.zip
-          unzip -o pipeline-scan-LATEST.zip -d scanner
-          java -jar scanner/pipeline-scan.jar -f results.json --format sarif -o results.sarif
+          curl -O https://raw.githubusercontent.com/veracode/veracode-pipeline-scan-results-to-sarif/main/convert_json_to_sarif.py
+          python3 convert_json_to_sarif.py -i results.json -o results.sarif
 
+      # Envia o results.sarif para a aba "Code scanning alerts"
       - name: Upload do relatório no GitHub (SARIF)
         uses: github/codeql-action/upload-sarif@v2
         with:
