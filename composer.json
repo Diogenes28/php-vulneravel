@@ -1,0 +1,11 @@
+{
+    "name": "diogenes.carmo/php-vulneravel",
+    "description": "Projeto PHP com vulnerabilidades para testes de segurança",
+    "authors": [
+        {
+            "name": "Diogenes do Carmo",
+            "email": "diogenesdocarmo@gmail.com"
+        }
+    ],
+    "require": {}
+}
