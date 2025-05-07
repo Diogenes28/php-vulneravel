@@ -6,7 +6,7 @@ name: Veracode Static Analysis Pipeline Scan
 on:
   workflow_dispatch:  # Permite execução manual pelo botão "Run workflow"
   push:
-    branches: [ master ]  # Roda quando houver push na branch "master"
+    branches: [ main ]  # Roda quando houver push na branch "main"
   pull_request:
     types: [opened, synchronize] # evita execuções desnecessárias no PR
 
