@@ -45,8 +45,6 @@ jobs:
           name: CodePackage # Nome do artefato que foi gerado no job "build"
 
       # Passo 2: Executar o Veracode Pipeline Scan para analisar o código em busca de vulnerabilidades
-      # Passo 2: Executar o Veracode Pipeline Scan para analisar o código em busca de vulnerabilidades
-      # Executa o Veracode Pipeline Scan, que realiza a análise de segurança no código PHP
       # Executa o Veracode Pipeline Scan a partir do arquivo JAR
       # Usa o API ID da Veracode armazenado em "secrets"
       # Usa a API Key da Veracode armazenada em "secrets"
